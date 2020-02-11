@@ -10,5 +10,5 @@ This is intended as a bit of fun, please do not have any fallings-out over this 
 - Change the `filename` in `whatsAppSentimentAnalysis.py`,
 - Open a python 3.x interpreter,
 - Type `python3 whatsAppSentimentAnalysis.py` from command line
-	- or-
+	**or**
 - Type `%run whatsAppSentimentAnalysis.py` from within a python interpreter
