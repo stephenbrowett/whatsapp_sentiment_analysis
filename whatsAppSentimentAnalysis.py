@@ -1,13 +1,14 @@
 import random
 
 from textblob import TextBlob
+from dateutil.parser import parse
 from collections import defaultdict
 
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
-filename = "data/test/WhatsAppChatWithTest.txt"
+filename = "data/solveig/WhatsAppChatWithSolveigAndvig.txt"
 
 with open(filename, "r", encoding = "latin1") as infile:
 	data = infile.read()
@@ -39,13 +40,15 @@ for i in data:
 		'time' : time
 	})
 
-fig = plt.figure()
+# TODO: plot sentiment vs time
 
-f, (ax1, ax2, ax3) = plt.subplots(3)
-#ax1 = fig.add_subplot(111)
+fig = plt.figure()
 
 plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%d/%m/%Y'))
 plt.gcf().autofmt_xdate(rotation = 0)
+
+f, (ax1, ax2, ax3) = plt.subplots(3)
+#ax1 = fig.add_subplot(111)
 
 ax1.xaxis_date()
 
@@ -59,6 +62,7 @@ for n, i in enumerate(conversation.keys()):
 	print("Mean sentiment score: {0}".format(np.mean(sentiments)))
 	print("Median sentiment score: {0}".format(np.percentile(sentiments, 50)))
 	print("IQR sentiment score: {0}".format(np.percentile(sentiments, [25, 75])))
+	print("")
 	print("Most positive messages:")
 	print(np.array([j['sentence'] for j in np.array(conversation[i])[np.where(np.array(sentiments) >= 0.9)[0]]]))
 	print('\n')
@@ -83,13 +87,15 @@ for n, i in enumerate(conversation.keys()):
 
 	print('\n')
 
-	dates = set([j['date'] for j in conversation[i]])
+	dates = list(set([j['date'] for j in conversation[i]]))
+
+	dates.sort()
 
 	daily_sentiment_low = []
 	daily_sentiment = []
 	daily_sentiment_high = []
 	for j in dates:
-		date_subset = [k['sentiment'] for k in conversation[i] if k == j]
+		date_subset = [k['sentiment'] for k in conversation[i] if k['date'] == j]
 
 		rang = np.percentile(date_subset, [16, 50, 84])
 
@@ -102,8 +108,10 @@ for n, i in enumerate(conversation.keys()):
 
 	print('\n')
 
-	ax1.plot(dates, daily_sentiment)
-	ax1.fill_between(dates, daily_sentiment_low, daily_sentiment_high, alpha = 0.5)
+	x_data = [parse(date).date() for date in dates]
+
+	ax1.plot(x_data, daily_sentiment)
+	ax1.fill_between(x_data, daily_sentiment_low, daily_sentiment_high, alpha = 0.5)
 
 	bins = np.arange(-1.0, 1.2, 0.1)
 
