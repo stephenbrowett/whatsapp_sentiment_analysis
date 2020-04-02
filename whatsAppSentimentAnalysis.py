@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
-filename = "data/solveig/WhatsAppChatWithSolveigAndvig.txt"
+filename = "data/WhatsAppChat.txt"
 
 with open(filename, "r", encoding = "latin1") as infile:
 	data = infile.read()
