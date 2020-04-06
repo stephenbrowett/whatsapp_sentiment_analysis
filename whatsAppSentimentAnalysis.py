@@ -1,4 +1,5 @@
 import random
+import datetime
 
 from textblob import TextBlob
 from dateutil.parser import parse
@@ -8,7 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
-filename = "data/WhatsAppChat.txt"
+filename = "data/solveig/WhatsAppChatWithSolveigAndvig.txt"
 
 with open(filename, "r", encoding = "latin1") as infile:
 	data = infile.read()
@@ -44,14 +45,16 @@ for i in data:
 
 fig = plt.figure()
 
-plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%d/%m/%Y'))
-plt.gcf().autofmt_xdate(rotation = 0)
-
-f, (ax1, ax2, ax3) = plt.subplots(3)
+f, (ax1, ax2, ax3, ax4) = plt.subplots(4)
 #ax1 = fig.add_subplot(111)
+
+ax1.xaxis.set_major_formatter(mdates.DateFormatter('%d/%m/%Y'))
+ax2.xaxis.set_major_formatter(mdates.DateFormatter('%d/%m/%Y'))
+#plt.gcf().autofmt_xdate(rotation = 0)
 
 ax1.xaxis_date()
 
+person_sentiment = []
 hist = []
 for n, i in enumerate(conversation.keys()):
 	print("Person {0}/{1}:".format(n + 1, len(conversation.keys())))
@@ -87,15 +90,30 @@ for n, i in enumerate(conversation.keys()):
 
 	print('\n')
 
-	dates = list(set([j['date'] for j in conversation[i]]))
+	dates = list(set([datetime.datetime.strptime(j['date'], "%d/%m/%Y") for j in conversation[i]]))
 
 	dates.sort()
+
+	first_date = dates[0]
+	last_date = dates[-1]
+
+	all_dates = [first_date + datetime.timedelta(days = i) for i in range((last_date - first_date).days)]
 
 	daily_sentiment_low = []
 	daily_sentiment = []
 	daily_sentiment_high = []
-	for j in dates:
-		date_subset = [k['sentiment'] for k in conversation[i] if k['date'] == j]
+	num_messages = []
+	for j in all_dates:
+		date_subset = [k['sentiment'] for k in conversation[i] if k['date'] == j.strftime("%d/%m/%Y")]
+
+		if date_subset == []:
+			daily_sentiment_low.append(np.nan)
+			daily_sentiment.append(np.nan)
+			daily_sentiment_high.append(np.nan)
+
+			num_messages.append(0)
+
+			continue
 
 		rang = np.percentile(date_subset, [16, 50, 84])
 
@@ -103,21 +121,38 @@ for n, i in enumerate(conversation.keys()):
 		daily_sentiment.append(rang[1])
 		daily_sentiment_high.append(rang[2])
 
-	print("Happiest day: {0}".format(dates[np.argmax(daily_sentiment)]))
-	print("Saddest day: {0}".format(dates[np.argmin(daily_sentiment)]))
+		num_messages.append(len(date_subset))
+
+	print("Happiest day: {0}".format(all_dates[np.nanargmax(daily_sentiment)]))
+	print("Saddest day: {0}".format(all_dates[np.nanargmin(daily_sentiment)]))
 
 	print('\n')
 
-	x_data = [parse(date).date() for date in dates]
+	x_data = [date.date() for date in all_dates]
 
+	# ax1 = daily sentiment
 	ax1.plot(x_data, daily_sentiment)
 	ax1.fill_between(x_data, daily_sentiment_low, daily_sentiment_high, alpha = 0.5)
 
+	# ax2 = number of messages per day
+
+	ax2.plot(x_data, num_messages, label = i)
+
+	# ax3 = histogram of sentiment
+
 	bins = np.arange(-1.0, 1.2, 0.1)
 
-	hist.append(np.histogram(sentiments, bins = bins))
+	ax3.hist(sentiments, bins = bins, alpha = 0.5)
 
-	#ax1.hist(sentiments, bins = bins, alpha = 0.5)
+	person_sentiment.append(sentiments)
+
+# ax4 = scatter plots of sentiment with best-fit lines and correlation coefficients
+people = list(conversation.keys())
+
+ax4.scatter(person_sentiment[0], label = people[0])
+ax4.scatter(person_sentiment[1], label = people[1])
+
+plt.legend()
 
 plt.show()
 
